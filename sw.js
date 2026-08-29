@@ -1,28 +1,28 @@
 const CACHE_NAME = "ftc-scout-arena-v1";
 const APP_SHELL = [
-  "/",
-  "/index.html",
-  "/manifest.webmanifest",
-  "/src/styles.css",
-  "/src/app.js",
-  "/src/components/ui.js",
-  "/src/data/seed.js",
-  "/src/services/storage.js",
-  "/src/services/scoring.js",
-  "/src/services/analytics.js",
-  "/src/services/export.js",
-  "/src/pages/dashboard.js",
-  "/src/pages/matches.js",
-  "/src/pages/scout.js",
-  "/src/pages/teams.js",
-  "/src/pages/ranking.js",
-  "/src/pages/compare.js",
-  "/src/pages/favorites.js",
-  "/src/pages/stats.js",
-  "/src/pages/season.js",
-  "/src/pages/admin.js",
-  "/src/pages/settings.js"
-];
+  "./",
+  "index.html",
+  "manifest.webmanifest",
+  "src/styles.css",
+  "src/app.js",
+  "src/components/ui.js",
+  "src/data/seed.js",
+  "src/services/storage.js",
+  "src/services/scoring.js",
+  "src/services/analytics.js",
+  "src/services/export.js",
+  "src/pages/dashboard.js",
+  "src/pages/matches.js",
+  "src/pages/scout.js",
+  "src/pages/teams.js",
+  "src/pages/ranking.js",
+  "src/pages/compare.js",
+  "src/pages/favorites.js",
+  "src/pages/stats.js",
+  "src/pages/season.js",
+  "src/pages/admin.js",
+  "src/pages/settings.js"
+].map((path) => new URL(path, self.registration.scope).toString());
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -45,6 +45,6 @@ self.addEventListener("fetch", (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
       }
       return response;
-    }).catch(() => caches.match("/index.html")))
+    }).catch(() => caches.match(new URL("index.html", self.registration.scope).toString())))
   );
 });

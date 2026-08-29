@@ -446,7 +446,7 @@ window.addEventListener("offline", () => { syncStatus = "offline"; render(); toa
 async function initialize() {
   state = await loadState();
   storageInfo = getStorageInfo();
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => undefined);
   if ("BroadcastChannel" in window) {
     channel = new BroadcastChannel("ftc-scout-arena-state");
     channel.onmessage = async (message) => {

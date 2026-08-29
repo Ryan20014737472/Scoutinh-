@@ -2,7 +2,7 @@
   "name": "FTC Scout Arena",
   "short_name": "Scout Arena",
   "description": "Scouting mobile-first para FIRST Tech Challenge.",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#07111f",
   "theme_color": "#07111f",
