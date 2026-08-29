@@ -6,12 +6,11 @@ import {
 } from "../types/domain.js";
 
 export { APP_SCHEMA_VERSION } from "../types/domain.js";
-export const STORAGE_KEY = "ftc-scout-arena.state.v1";
+export const STORAGE_KEY = "ftc-scout-arena.state.v2";
 
 export const SEED_IDS = Object.freeze({
   season: "season-2026-nexus",
   event: "event-nexus-qualifier",
-  currentScout: "scout-ana",
 });
 
 const SEED_CREATED_AT = "2026-08-29T11:40:00.000-03:00";
@@ -265,9 +264,9 @@ const TEAMS = [
 const SCOUTS = [
   {
     id: "scout-ana",
-    name: "Ana Costa",
-    initials: "AC",
-    role: "Administrador",
+    name: "Conta de modelo",
+    initials: "CM",
+    role: "Scout",
     color: "#7c5cff",
     isActive: true,
     createdAt: SEED_CREATED_AT,
@@ -787,20 +786,21 @@ function buildSeedState() {
     createdAt: SEED_CREATED_AT,
     updatedAt: SEED_UPDATED_AT,
     seasonConfigs: [SEASON_CONFIG],
-    events: [EVENT],
-    scouts: SCOUTS,
-    teams: TEAMS,
-    matches: MATCHES,
-    matchTeams: MATCH_TEAMS,
-    scoutingRecords: SCOUTING_RECORDS,
-    favorites: FAVORITES,
-    watchlist: WATCHLIST,
-    notes: NOTES,
+    events: [],
+    scouts: [],
+    teams: [],
+    matches: [],
+    matchTeams: [],
+    scoutingRecords: [],
+    favorites: [],
+    watchlist: [],
+    notes: [],
     // Queue entries use this shape when an offline submission still needs sync.
     syncQueue: [],
     settings: {
-      currentScoutId: SEED_IDS.currentScout,
-      activeEventId: SEED_IDS.event,
+      currentScoutId: null,
+      activeEventId: null,
+      activeSeasonId: SEED_IDS.season,
       ratingWeights: { ...DEFAULT_RATING_WEIGHTS },
     },
   };

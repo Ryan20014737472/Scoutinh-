@@ -8,7 +8,7 @@
 import * as seedData from "../data/seed.js";
 import { calculateRecord, normalizeScoutingRecord } from "./scoring.js";
 
-export const DATABASE_NAME = "ftc-scouting";
+export const DATABASE_NAME = "ftc-scouting-v2";
 export const DATABASE_VERSION = 1;
 export const STORE_NAME = "state";
 export const STATE_KEY = "application";
@@ -328,7 +328,7 @@ export function updateState(mutator) {
   });
 }
 
-/** Restores a fresh copy of the seeded event data. */
+/** Restores a fresh, empty scouting workspace. */
 export function resetState({ preserveSettings = false } = {}) {
   return enqueue(async () => {
     const fresh = createInitialState();

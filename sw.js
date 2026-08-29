@@ -1,4 +1,4 @@
-const CACHE_NAME = "ftc-scout-arena-v1";
+const CACHE_NAME = "ftc-scout-arena-v3";
 const APP_SHELL = [
   "./",
   "index.html",

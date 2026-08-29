@@ -6,8 +6,8 @@
  * services, pages and import/export code without coupling those layers.
  */
 
-export const APP_SCHEMA_VERSION = 1;
-export const STORAGE_KEY = "ftc-scout-arena.state.v1";
+export const APP_SCHEMA_VERSION = 2;
+export const STORAGE_KEY = "ftc-scout-arena.state.v2";
 
 /** @typedef {"auto"|"teleop"|"endgame"} MatchPhase */
 /** @typedef {"counter"|"boolean"|"select"} ActionInputType */

@@ -310,7 +310,7 @@ async function handleAction(button) {
   }
   if (action === "request-reset") { modal = { type: "reset" }; render(); return; }
   if (action === "confirm-reset") {
-    state = await resetState(); storageInfo = getStorageInfo(); modal = null; scoutDraft = null; draftDirty = false; view = "dashboard"; announceUpdate(); render(); toast("Dados de exemplo restaurados.", "success"); return;
+    state = await resetState(); storageInfo = getStorageInfo(); modal = null; scoutDraft = null; draftDirty = false; view = "dashboard"; announceUpdate(); render(); toast("Banco local limpo.", "success"); return;
   }
   if (action === "request-delete-record") { modal = { type: "delete-record", recordId: data.recordId }; render(); return; }
   if (action === "confirm-delete-record") {
