@@ -1059,6 +1059,23 @@ function teamBelongsToEvent(team, eventId) {
   return !team?.eventId || idsEqual(team.eventId, eventId);
 }
 
+function scheduledTeamSlotCount(match, matchTeams = []) {
+  const direct = firstDefined(match?.matchTeams, match?.teams, []);
+  if (Array.isArray(direct) && direct.length) return direct.length;
+
+  if (isObject(match?.alliances)) {
+    const count = ["red", "blue"].reduce((total, alliance) => {
+      const data = match.alliances[alliance];
+      const entries = Array.isArray(data) ? data : firstDefined(data?.teamIds, data?.teams, []);
+      return total + asArray(entries).length;
+    }, 0);
+    if (count) return count;
+  }
+
+  const globalEntries = asArray(matchTeams).filter((entry) => idsEqual(entry?.matchId, match?.id));
+  return globalEntries.length;
+}
+
 /**
  * Aggregates the live dashboard: current-event counts, ranking, coverage,
  * phase averages, recent records, favourites, and useful observation alerts.
@@ -1114,7 +1131,9 @@ export function calculateDashboardAggregate(input = {}, records, seasonConfig, o
       message: `${firstDefined(team?.number, team?.teamNumber, objectId(team))} ainda não foi analisado.`,
     })),
   ];
-  const totalMatches = args.matches.filter((match) => !args.eventId || idsEqual(firstDefined(match?.eventId, match?.event?.id), args.eventId)).length;
+  const scopedMatches = args.matches.filter((match) => !args.eventId || idsEqual(firstDefined(match?.eventId, match?.event?.id), args.eventId));
+  const totalMatches = scopedMatches.length;
+  const totalScoutingSlots = scopedMatches.reduce((total, match) => total + scheduledTeamSlotCount(match, args.context?.matchTeams), 0);
 
   return {
     eventId: args.eventId ?? null,
@@ -1129,7 +1148,8 @@ export function calculateDashboardAggregate(input = {}, records, seasonConfig, o
     matchCount: uniqueMatchIds.size,
     matchesAnalyzed: uniqueMatchIds.size,
     totalMatches,
-    completionRate: percent(uniqueMatchIds.size, totalMatches),
+    totalScoutingSlots,
+    completionRate: percent(scopedRecords.length, totalScoutingSlots),
     scoutCount: activeScoutIds.size,
     activeScouts: activeScoutIds.size,
     averageScore,

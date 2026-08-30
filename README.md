@@ -11,6 +11,15 @@ Aplicação mobile-first para registrar scouting de FIRST Tech Challenge durante
 - painel, perfis de equipe, ranking interno, comparação, favoritos, watchlist, estatísticas e exportação CSV/JSON;
 - modo offline visual e cache do app por service worker.
 
+## Temporada FTC
+
+- O workspace abre vazio e usa o preset atual **BIOBUZZ™ 2026-2027** em
+  modo de observação: até a FIRST publicar a pontuação oficial, o app não
+  calcula nem exibe pontos inventados.
+- A página de temporada aponta para os [materiais oficiais da FIRST](https://ftc-resources.firstinspires.org/ftc/game).
+- O preset **DECODE™ 2025-2026** é mantido somente para consulta histórica,
+  com valores do [Competition Manual oficial](https://ftc-resources.firstinspires.org/ftc/archive/2026/game/cm-html/DECODE_Competition_Manual_TU32.htm).
+
 ## Desenvolvimento
 
 O projeto não depende de pacotes externos. Use o Node.js para validar e gerar o bundle estático:

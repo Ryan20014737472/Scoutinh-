@@ -3,6 +3,7 @@ import { loadState, updateState, resetState, getStorageInfo, createDraft, normal
 import { downloadExport } from "./services/export.js";
 import { getRanking } from "./services/analytics.js";
 import { getSeasonActions } from "./services/scoring.js";
+import { createBiobuzzPreseasonConfig, createDecodeArchiveConfig } from "./data/seed.js";
 import { activeEvent, activeSeason, currentScout, findTeam, getMatchTeams, recordFor } from "./utils/domain.js";
 import { renderDashboard } from "./pages/dashboard.js";
 import { renderMatches } from "./pages/matches.js";
@@ -136,9 +137,12 @@ async function mutate(mutator, { repaint = true } = {}) {
 }
 
 async function navigate(nextView, { teamId } = {}) {
-  if (view === "scout" && nextView !== "scout" && scoutDraft && draftDirty) {
-    const leave = window.confirm("Existem dados de scouting que ainda não foram salvos. Deseja sair mesmo assim?");
-    if (!leave) return;
+  if (view === "scout" && nextView !== "scout" && scoutDraft) {
+    if (draftDirty) {
+      const leave = window.confirm("Existem dados de scouting que ainda não foram salvos. Deseja sair mesmo assim?");
+      if (!leave) return;
+    }
+    await discardScoutDraft();
   }
   if (nextView === "teams") selectedTeamId = null;
   if (nextView === "team" && teamId) selectedTeamId = teamId;
@@ -168,13 +172,78 @@ function findAction(actionId) {
   return getSeasonActions(activeSeason(state)).find((action) => String(action.id) === String(actionId));
 }
 
+function assignmentKeyFor({ alliance, position } = {}) {
+  const resolvedAlliance = String(alliance).toLowerCase() === "blue" ? "blue" : "red";
+  const resolvedPosition = Math.max(1, Number(position) || 1);
+  return `${resolvedAlliance}-${resolvedPosition}`;
+}
+
+function hasLiveAssignment(next, match, assignmentKey, scoutId) {
+  return Object.values(next?.drafts || {}).some((draft) => (
+    String(draft?.matchId) === String(match?.id)
+    && String(draft?.scoutId) === String(scoutId)
+    && assignmentKeyFor(draft) === assignmentKey
+  ));
+}
+
+function releaseScoutAssignment(next, draft) {
+  const match = (next.matches || []).find((item) => String(item.id) === String(draft?.matchId));
+  if (!match || !draft?.scoutId) return;
+  const assignmentKey = assignmentKeyFor(draft);
+  if (String(match.scoutAssignments?.[assignmentKey]) !== String(draft.scoutId)) return;
+  const { [assignmentKey]: released, ...remaining } = match.scoutAssignments || {};
+  match.scoutAssignments = remaining;
+}
+
+function refreshMatchStatus(next, matchId) {
+  const match = (next.matches || []).find((item) => String(item.id) === String(matchId));
+  if (!match) return;
+  const entries = getMatchTeams(next, match);
+  const completed = entries.filter((entry) => recordFor(next, match.id, entry.teamId)).length;
+  match.status = entries.length && completed === entries.length
+    ? "complete"
+    : completed > 0 ? "in_progress" : "not_started";
+}
+
+async function discardScoutDraft() {
+  const draft = scoutDraft;
+  if (!draft) return;
+  await mutate((next) => {
+    if (next.drafts) delete next.drafts[draft.id];
+    releaseScoutAssignment(next, draft);
+    refreshMatchStatus(next, draft.matchId);
+    return next;
+  }, { repaint: false });
+  scoutDraft = null;
+  draftDirty = false;
+  modal = null;
+}
+
 async function enterScout(data) {
   const match = (state.matches || []).find((item) => String(item.id) === String(data.matchId));
   const team = findTeam(state, data.teamId);
   const scout = currentScout(state);
   const season = activeSeason(state);
-  if (!match || !team || !scout || !season) {
+  const event = activeEvent(state);
+  if (!event) {
+    toast("Crie e ative um evento antes de iniciar o scouting.", "info");
+    return navigate("admin");
+  }
+  if (!scout) {
+    toast("Cadastre um scout antes de iniciar o scouting.", "info");
+    return navigate("admin");
+  }
+  if (!season) {
+    toast("Configure uma temporada antes de iniciar o scouting.", "error");
+    return navigate("season");
+  }
+  if (!match || !team || String(match.eventId) !== String(event.id)) {
     toast("Não foi possível preparar este scouting.", "error");
+    return;
+  }
+  const entry = getMatchTeams(state, match).find((item) => String(item.teamId) === String(team.id));
+  if (!entry) {
+    toast("Esta equipe não está registrada na partida selecionada.", "error");
     return;
   }
   const existingRecord = recordFor(state, match.id, team.id);
@@ -183,8 +252,9 @@ async function enterScout(data) {
     await navigate("team", { teamId: team.id });
     return;
   }
-  const assignmentKey = `${data.alliance || "red"}-${data.position || 1}`;
-  const reservedBy = match.scoutAssignments?.[assignmentKey];
+  const assignmentKey = assignmentKeyFor(entry);
+  const storedReservation = match.scoutAssignments?.[assignmentKey];
+  const reservedBy = hasLiveAssignment(state, match, assignmentKey, storedReservation) ? storedReservation : null;
   if (reservedBy && String(reservedBy) !== String(scout.id)) {
     const owner = (state.scouts || []).find((item) => String(item.id) === String(reservedBy));
     toast(`Esta posição já está reservada por ${owner?.name || "outro scout"}.`, "error");
@@ -192,11 +262,12 @@ async function enterScout(data) {
   }
   await mutate((next) => {
     const live = next.matches.find((item) => String(item.id) === String(match.id));
+    if (!live) return next;
     live.scoutAssignments = { ...(live.scoutAssignments || {}), [assignmentKey]: scout.id };
     return next;
   }, { repaint: false });
   const existingDraft = Object.values(state.drafts || {}).find((draft) => String(draft.matchId) === String(match.id) && String(draft.teamId) === String(team.id) && String(draft.scoutId) === String(scout.id));
-  scoutDraft = existingDraft || createDraft({ eventId: activeEvent(state)?.id, matchId: match.id, teamId: team.id, scoutId: scout.id, seasonId: season.id, alliance: data.alliance || "red", position: Number(data.position || 1) }, season);
+  scoutDraft = existingDraft || createDraft({ eventId: event.id, matchId: match.id, teamId: team.id, scoutId: scout.id, seasonId: season.id, alliance: entry.alliance, position: Number(entry.position || 1) }, season);
   scoutPhase = "auto";
   draftDirty = Boolean(existingDraft);
   await saveDraft({ repaint: false });
@@ -211,12 +282,8 @@ async function saveScouting() {
     const saved = await submitRecord(scoutDraft, season);
     await mutate((next) => {
       if (next.drafts) delete next.drafts[scoutDraft.id];
-      const match = next.matches.find((item) => String(item.id) === String(saved.matchId));
-      if (match) {
-        const allEntries = getMatchTeams(next, match);
-        const finished = allEntries.every((entry) => recordFor(next, match.id, entry.teamId));
-        match.status = finished ? "complete" : "in_progress";
-      }
+      releaseScoutAssignment(next, scoutDraft);
+      refreshMatchStatus(next, saved.matchId);
       return next;
     }, { repaint: false });
     modal = null;
@@ -253,10 +320,33 @@ async function toggleWatchlist(teamId) {
 async function updateSeason(mutator) {
   await mutate((next) => {
     const event = activeEvent(next);
-    const season = (next.seasonConfigs || []).find((item) => String(item.id) === String(event?.seasonId)) || next.seasonConfigs?.[0];
+    const seasonId = event?.seasonConfigId || event?.seasonId || next.settings?.activeSeasonId;
+    const season = (next.seasonConfigs || []).find((item) => String(item.id) === String(seasonId)) || next.seasonConfigs?.[0];
     if (season) mutator(season, next);
     return next;
   });
+}
+
+async function applySeasonPreset(preset) {
+  if ((state.scoutingRecords || []).length || Object.keys(state.drafts || {}).length) {
+    toast("Para não reinterpretar registros ou rascunhos, aplique outro preset somente em um workspace sem scouting.", "error");
+    return;
+  }
+  const buildPreset = preset === "decode" ? createDecodeArchiveConfig : createBiobuzzPreseasonConfig;
+  const configured = buildPreset();
+  configured.updatedAt = new Date().toISOString();
+  await mutate((next) => {
+    next.seasonConfigs = [configured];
+    next.settings = { ...(next.settings || {}), activeSeasonId: configured.id };
+    const event = activeEvent(next);
+    if (event) {
+      event.seasonId = configured.id;
+      event.seasonConfigId = configured.id;
+      event.updatedAt = configured.updatedAt;
+    }
+    return next;
+  });
+  toast(preset === "decode" ? "Preset histórico DECODE aplicado." : "Preset BIOBUZZ de pré-temporada aplicado.", "success");
 }
 
 async function handleAction(button) {
@@ -295,6 +385,7 @@ async function handleAction(button) {
     return;
   }
   if (action === "clear-compare") { compareSelection = []; render(); return; }
+  if (action === "apply-season-preset") return applySeasonPreset(data.preset);
   if (action === "season-tab") {
     document.querySelectorAll("[data-season-panel]").forEach((panel) => panel.classList.toggle("hidden", panel.dataset.seasonPanel !== data.phase));
     document.querySelectorAll("[data-action='season-tab']").forEach((item) => item.classList.toggle("active", item.dataset.phase === data.phase));
@@ -314,11 +405,25 @@ async function handleAction(button) {
   }
   if (action === "request-delete-record") { modal = { type: "delete-record", recordId: data.recordId }; render(); return; }
   if (action === "confirm-delete-record") {
-    await mutate((next) => { next.scoutingRecords = (next.scoutingRecords || []).filter((record) => String(record.id) !== String(data.recordId)); return next; }, { repaint: false });
+    await mutate((next) => {
+      const record = (next.scoutingRecords || []).find((item) => String(item.id) === String(data.recordId));
+      next.scoutingRecords = (next.scoutingRecords || []).filter((item) => String(item.id) !== String(data.recordId));
+      if (record) {
+        releaseScoutAssignment(next, record);
+        refreshMatchStatus(next, record.matchId);
+      }
+      return next;
+    }, { repaint: false });
     modal = null; render(); toast("Registro excluído e estatísticas atualizadas.", "success"); return;
   }
   if (action === "set-active-event") {
-    await mutate((next) => { next.settings.activeEventId = data.eventId; return next; });
+    await mutate((next) => {
+      const event = (next.events || []).find((item) => String(item.id) === String(data.eventId));
+      if (!event) return next;
+      next.settings.activeEventId = event.id;
+      if (event.seasonConfigId || event.seasonId) next.settings.activeSeasonId = event.seasonConfigId || event.seasonId;
+      return next;
+    });
     toast("Evento ativo atualizado.", "success"); return;
   }
   if (action === "clear-stats-filters") { filters.stats = {}; render(); return; }
@@ -338,6 +443,10 @@ async function handleForm(form) {
   const type = form.dataset.form;
   const values = Object.fromEntries(new FormData(form).entries());
   if (type === "current-scout") {
+    if (!(state.scouts || []).some((scout) => String(scout.id) === String(values.scoutId))) {
+      toast("Cadastre um scout antes de escolher a conta atual.", "error");
+      return;
+    }
     await mutate((next) => { next.settings.currentScoutId = values.scoutId; return next; });
     toast("Conta de scout atualizada.", "success"); return;
   }
@@ -367,20 +476,54 @@ async function handleForm(form) {
     toast("Equipe cadastrada.", "success"); return;
   }
   if (type === "add-scout") {
-    await mutate((next) => { next.scouts.push({ id: makeId("scout", values.name), name: values.name.trim(), role: values.role, isActive: true, createdAt: new Date().toISOString() }); return next; });
-    toast("Scout adicionado.", "success"); return;
+    const name = values.name.trim();
+    await mutate((next) => {
+      const scout = { id: makeId("scout", name), name, role: values.role, isActive: true, createdAt: new Date().toISOString() };
+      next.scouts.push(scout);
+      if (!next.settings.currentScoutId) next.settings.currentScoutId = scout.id;
+      return next;
+    });
+    toast("Scout adicionado e definido como conta atual.", "success"); return;
   }
   if (type === "add-event") {
-    await mutate((next) => { const id = makeId("event", values.name); next.events.push({ id, name: values.name.trim(), type: values.type, status: "active", seasonId: activeSeason(next)?.id, teamIds: [], createdAt: new Date().toISOString() }); next.settings.activeEventId = id; return next; });
+    await mutate((next) => {
+      const id = makeId("event", values.name);
+      const season = activeSeason(next);
+      next.events.push({
+        id,
+        name: values.name.trim(),
+        type: values.type,
+        status: "active",
+        seasonId: season?.id || null,
+        seasonConfigId: season?.id || null,
+        teamIds: (next.teams || []).map((team) => team.id),
+        createdAt: new Date().toISOString(),
+      });
+      next.settings.activeEventId = id;
+      return next;
+    });
     toast("Evento criado e ativado.", "success"); return;
   }
   if (type === "add-match") {
-    const teamIds = [values.red1, values.red2, values.blue1, values.blue2];
-    if (new Set(teamIds).size !== 4) { toast("Use quatro equipes diferentes na mesma partida.", "error"); return; }
     const event = activeEvent(state);
+    if (!event) { toast("Crie e ative um evento antes de cadastrar partidas.", "error"); return; }
+    if ((state.teams || []).length < 4) { toast("Cadastre pelo menos quatro equipes antes de montar uma partida.", "error"); return; }
+    const teamIds = [values.red1, values.red2, values.blue1, values.blue2];
+    const allTeamsKnown = teamIds.every((teamId) => (state.teams || []).some((team) => String(team.id) === String(teamId)));
+    if (!allTeamsKnown || new Set(teamIds).size !== 4) { toast("Selecione quatro equipes diferentes na mesma partida.", "error"); return; }
     const number = Number(values.number);
-    if ((state.matches || []).some((match) => String(match.eventId) === String(event?.id) && Number(match.number) === number)) { toast("Esse número de partida já existe no evento.", "error"); return; }
-    await mutate((next) => { const id = `match-q-${String(number).padStart(2,"0")}-${Date.now().toString(36).slice(-3)}`; next.matches.push({ id, eventId: activeEvent(next)?.id, seasonId: activeSeason(next)?.id, number, label: `Qualificação ${number}`, level: "qualification", status: "not_started", scheduledAt: new Date(values.scheduledAt).toISOString(), alliances: { red: { teamIds: [values.red1,values.red2] }, blue: { teamIds: [values.blue1,values.blue2] } }, scoutAssignments: {} }); next.matchTeams = [...(next.matchTeams || []), ...[values.red1,values.red2].map((teamId,index) => ({ id: `${id}:${teamId}`,matchId:id,teamId,alliance:"red",station:index+1 })), ...[values.blue1,values.blue2].map((teamId,index) => ({ id: `${id}:${teamId}`,matchId:id,teamId,alliance:"blue",station:index+1 }))]; return next; });
+    if (!Number.isInteger(number) || number < 1) { toast("Informe um número de partida válido.", "error"); return; }
+    const scheduledAt = new Date(values.scheduledAt);
+    if (!Number.isFinite(scheduledAt.getTime())) { toast("Informe o horário da partida.", "error"); return; }
+    if ((state.matches || []).some((match) => String(match.eventId) === String(event.id) && Number(match.number) === number)) { toast("Esse número de partida já existe no evento.", "error"); return; }
+    await mutate((next) => {
+      const id = `match-q-${String(number).padStart(2,"0")}-${Date.now().toString(36).slice(-3)}`;
+      const active = activeEvent(next);
+      const season = activeSeason(next);
+      next.matches.push({ id, eventId: active?.id || event.id, seasonId: season?.id || null, seasonConfigId: season?.id || null, number, label: `Qualificação ${number}`, level: "qualification", status: "not_started", scheduledAt: scheduledAt.toISOString(), alliances: { red: { teamIds: [values.red1, values.red2] }, blue: { teamIds: [values.blue1, values.blue2] } }, scoutAssignments: {} });
+      next.matchTeams = [...(next.matchTeams || []), ...[values.red1, values.red2].map((teamId, index) => ({ id: `${id}:${teamId}`, matchId: id, teamId, alliance: "red", station: index + 1 })), ...[values.blue1, values.blue2].map((teamId, index) => ({ id: `${id}:${teamId}`, matchId: id, teamId, alliance: "blue", station: index + 1 }))];
+      return next;
+    });
     toast("Partida cadastrada.", "success"); return;
   }
 }

@@ -7,7 +7,7 @@
  */
 
 export const APP_SCHEMA_VERSION = 2;
-export const STORAGE_KEY = "ftc-scout-arena.state.v2";
+export const STORAGE_KEY = "ftc-scout-arena.state.v3";
 
 /** @typedef {"auto"|"teleop"|"endgame"} MatchPhase */
 /** @typedef {"counter"|"boolean"|"select"} ActionInputType */

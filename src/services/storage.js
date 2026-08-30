@@ -8,7 +8,7 @@
 import * as seedData from "../data/seed.js";
 import { calculateRecord, normalizeScoutingRecord } from "./scoring.js";
 
-export const DATABASE_NAME = "ftc-scouting-v2";
+export const DATABASE_NAME = "ftc-scouting-v3";
 export const DATABASE_VERSION = 1;
 export const STORE_NAME = "state";
 export const STATE_KEY = "application";

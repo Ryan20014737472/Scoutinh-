@@ -1,9 +1,10 @@
 import { escapeHtml, icon, sectionHeader, statusPill } from "../components/ui.js";
-import { activeEvent, getMatchTeams, matchLabel, matchTime, recordFor } from "../utils/domain.js";
+import { activeEvent, activeSeason, currentScout, getMatchTeams, matchLabel, matchTime, recordFor } from "../utils/domain.js";
 
 function matchesForEvent(state) {
   const event = activeEvent(state);
-  return (state.matches || []).filter((match) => !event || !match.eventId || String(match.eventId) === String(event.id));
+  if (!event) return [];
+  return (state.matches || []).filter((match) => String(match.eventId) === String(event.id));
 }
 
 const statusLabels = { not_started: "Não iniciada", in_progress: "Em andamento", complete: "Completa", incomplete: "Incompleta" };
@@ -11,10 +12,13 @@ const statusLabels = { not_started: "Não iniciada", in_progress: "Em andamento"
 function teamTile(state, match, entry) {
   const team = entry.team;
   const record = recordFor(state, match.id, entry.teamId);
-  const assignment = (state.scoutingAssignments || []).find((item) => String(item.matchId) === String(match.id) && String(item.teamId) === String(entry.teamId) && item.status !== "released");
-  const assignedScoutId = assignment?.scoutId || match.scoutAssignments?.[`${entry.alliance}-${entry.position}`];
-  const currentScoutId = state.settings?.currentScoutId;
-  const suffix = record ? `<span class="status-pill good">${icon("check", 12)}${record.total ?? record.score?.total ?? 0}</span>` : assignedScoutId ? `<span class="status-pill ${String(assignedScoutId) === String(currentScoutId) ? "info" : "warn"}">${icon("user", 12)}${String(assignedScoutId) === String(currentScoutId) ? "sua vez" : "em uso"}</span>` : icon("chevron", 16);
+  const assignmentKey = `${entry.alliance}-${entry.position}`;
+  const assignedScoutId = match.scoutAssignments?.[assignmentKey];
+  const hasDraft = assignedScoutId && Object.values(state.drafts || {}).some((draft) => String(draft.matchId) === String(match.id) && String(draft.scoutId) === String(assignedScoutId) && `${draft.alliance}-${draft.position}` === assignmentKey);
+  const currentScoutId = currentScout(state)?.id;
+  const observationsOnly = activeSeason(state)?.scoringScope === "observations_only";
+  const savedLabel = observationsOnly ? "Salvo" : record?.total ?? record?.score?.total ?? 0;
+  const suffix = record ? `<span class="status-pill good">${icon("check", 12)}${savedLabel}</span>` : hasDraft ? `<span class="status-pill ${String(assignedScoutId) === String(currentScoutId) ? "info" : "warn"}">${icon("user", 12)}${String(assignedScoutId) === String(currentScoutId) ? "sua vez" : "em uso"}</span>` : icon("chevron", 16);
   return `<button class="team-tile" data-action="open-scout" data-match-id="${escapeHtml(match.id)}" data-team-id="${escapeHtml(entry.teamId)}" data-alliance="${escapeHtml(entry.alliance)}" data-position="${escapeHtml(entry.position)}" aria-label="Registrar scouting para ${escapeHtml(team?.number || "time")}">
     <span><strong>${escapeHtml(team?.number || "—")}</strong><span>${escapeHtml(team?.name || "Equipe não cadastrada")}</span></span>${suffix}
   </button>`;
@@ -50,13 +54,13 @@ export function renderMatches({ state, filters = {} }) {
   });
   const event = activeEvent(state);
   return `<section class="page fullwide">
-    ${sectionHeader({ eyebrow: event?.name || "Evento ativo", title: "Partidas", description: "Toque em um time para reservar a observação e abrir o scouting." })}
+    ${sectionHeader({ eyebrow: event?.name || "Nenhum evento ativo", title: "Partidas", description: event ? "Toque em um time para reservar a observação e abrir o scouting." : "Crie um evento, cadastre quatro equipes e monte a agenda para liberar o scouting." })}
     <div class="filterbar">
       <div class="search-box">${icon("search", 18)}<input data-filter="match-search" value="${escapeHtml(filters.term || "")}" placeholder="Buscar partida, número ou equipe" aria-label="Buscar partida ou equipe" /></div>
       <div class="filter-chips" role="tablist" aria-label="Status da partida">
         ${["Todas", "Não iniciada", "Em andamento", "Completa", "Incompleta"].map((item) => `<button class="chip ${status === item ? "active" : ""}" data-action="match-status" data-status="${escapeHtml(item)}">${escapeHtml(item)}</button>`).join("")}
       </div>
     </div>
-    ${matches.length ? `<div class="match-grid">${matches.map((match) => matchCard(state, match)).join("")}</div>` : `<div class="card pad"><div class="empty-state"><span class="empty-state__icon">${icon("matches",28)}</span><h3>Nenhuma partida encontrada</h3><p>Ajuste os filtros ou cadastre uma partida na área administrativa.</p></div></div>`}
+    ${matches.length ? `<div class="match-grid">${matches.map((match) => matchCard(state, match)).join("")}</div>` : `<div class="card pad"><div class="empty-state"><span class="empty-state__icon">${icon("matches",28)}</span><h3>${event ? "Nenhuma partida encontrada" : "Configure seu primeiro evento"}</h3><p>${event ? "Ajuste os filtros ou cadastre uma partida na área administrativa." : "O scouting será liberado assim que houver uma agenda com quatro equipes por partida."}</p><a class="button primary" data-view="admin" href="#admin">Abrir administração ${icon("chevron",16)}</a></div></div>`}
   </section>`;
 }

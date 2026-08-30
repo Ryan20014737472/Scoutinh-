@@ -129,6 +129,8 @@ export function scoutingRecordToRow(record, state = {}, options = {}) {
   const scout = scoutById.get(record?.scoutId);
   const match = matchById.get(record?.matchId);
   const event = eventById.get(record?.eventId);
+  const season = indexBy(state.seasonConfigs).get(record?.seasonId);
+  const observationsOnly = season?.scoringScope === "observations_only";
   const definitions = options.actionDefinitions || actionDefinitions(state);
 
   const row = {
@@ -141,10 +143,11 @@ export function scoutingRecordToRow(record, state = {}, options = {}) {
     Posição: record?.position || "",
     Scout: scout?.name || record?.scoutId || "",
     Temporada: record?.seasonId || "",
-    Auto: scoreValue(record, "auto"),
-    TeleOp: scoreValue(record, "teleop"),
-    Endgame: scoreValue(record, "endgame"),
-    "Total estimado": scoreValue(record, "total"),
+    "Status de pontuação": observationsOnly ? "Métricas internas; sem pontuação oficial" : season?.scoringStatus === "official_archive" ? "Referência histórica oficial" : "Estimativa de scouting",
+    Auto: observationsOnly ? "" : scoreValue(record, "auto"),
+    TeleOp: observationsOnly ? "" : scoreValue(record, "teleop"),
+    Endgame: observationsOnly ? "" : scoreValue(record, "endgame"),
+    "Total estimado": observationsOnly ? "" : scoreValue(record, "total"),
     Ciclos: scoreValue(record, "cycles"),
     Status: record?.status || "",
     Observações: record?.notes || record?.observations || "",
