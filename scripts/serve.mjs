@@ -4,7 +4,7 @@ import { resolve, extname, sep } from "node:path";
 
 const root = resolve(process.argv.includes("--production") ? "dist/client" : ".");
 const port = Number(process.env.PORT || 4173);
-const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml" };
+const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml", ".jpg": "image/jpeg" };
 createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url, "http://localhost").pathname);
@@ -17,4 +17,4 @@ createServer(async (request, response) => {
   } catch {
     response.writeHead(404, { "Content-Type": "text/plain" }); response.end("Arquivo não encontrado");
   }
-}).listen(port, "0.0.0.0", () => console.log(`Scout Arena em http://localhost:${port}`));
+}).listen(port, "0.0.0.0", () => console.log(`Acrux Scout em http://localhost:${port}`));

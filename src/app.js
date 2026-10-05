@@ -1,4 +1,4 @@
-import { icon, statusPill, toast, avatar, escapeHtml } from "./components/ui.js";
+import { icon, statusPill, toast, avatar, escapeHtml, brandIdentity } from "./components/ui.js";
 import { loadState, updateState, saveState, resetState, getStorageInfo, createDraft, normalizeDraft, submitRecord } from "./services/storage.js";
 import { downloadExport } from "./services/export.js";
 import { parseTeamLines, parseBackup } from "./services/import.js";
@@ -85,7 +85,7 @@ const makeId = (prefix, value = "") => `${prefix}-${slugify(value)}-${Date.now()
 
 function appTitle() {
   const titles = { dashboard: "Visão geral", matches: "Partidas", teams: "Equipes", team: "Equipe", scout: "Observação", ranking: "Ranking", compare: "Comparar equipes", favorites: "Favoritos", stats: "Estatísticas", season: "Temporada e regras", admin: "Gerenciar evento", settings: "Configurações", more: "Mais ferramentas" };
-  return `${titles[view] || "FTC Scout Arena"} · FTC Scout Arena`;
+  return `${titles[view] || "Acrux Scout"} · Acrux Scout`;
 }
 
 function navLink([key, label, iconName], compact = false) {
@@ -99,12 +99,12 @@ function searchHeader() {
 }
 
 function mobileHeader() {
-  return `<header class="mobile-topbar"><a class="brand" href="#dashboard" data-view="dashboard"><span class="brand-mark">${icon("robot",23)}</span><span class="brand-text"><strong>Scout Arena</strong><span>FTC SCOUTING</span></span></a><div class="mobile-header-actions">${navigator.onLine ? "" : statusPill("offline")}<button class="icon-button" data-view="settings" aria-label="Configurações">${icon("settings",19)}</button></div></header>`;
+  return `<header class="mobile-topbar"><a class="brand" href="#dashboard" data-view="dashboard">${brandIdentity()}</a><div class="mobile-header-actions">${navigator.onLine ? "" : statusPill("offline")}<button class="icon-button" data-view="settings" aria-label="Configurações">${icon("settings",19)}</button></div></header>`;
 }
 
 function shell(content) {
   const scout = currentScout(state);
-  return `<a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="app-shell"><aside class="sidebar"><a class="brand" href="#dashboard" data-view="dashboard"><span class="brand-mark">${icon("robot",24)}</span><span class="brand-text"><strong>Scout Arena</strong><span>FTC SCOUTING</span></span></a><nav class="side-nav" aria-label="Navegação principal"><span class="side-nav__section">Workspace</span>${primaryNav.map((item) => navLink(item)).join("")}<span class="side-nav__section">Análise e estratégia</span>${analysisNav.map((item) => navLink(item)).join("")}<span class="side-nav__section">Organização</span>${managementNav.map((item) => navLink(item)).join("")}</nav><div class="side-help"><div><h3>${icon("clipboard",15)} Pronto para a arena?</h3><p>Um evento organizado começa com uma boa observação.</p><button data-action="start-scout">Iniciar observação ${icon("chevron",13)}</button></div></div><div class="side-footer"><button class="side-footer__scout" data-view="settings" aria-label="Alterar scout atual">${avatar(scout)}<div><strong>${escapeHtml(scout?.name || "Seu perfil de scout")}</strong><span><i class="online-dot"></i>${syncStatus === "offline" ? "Trabalhando offline" : "Dados neste dispositivo"}</span></div>${icon("more",17)}</button></div></aside><main class="main" id="main-content" tabindex="-1">${mobileHeader()}${searchHeader()}${content}</main><nav class="mobile-nav" aria-label="Atalhos">${mobileNav.map((item) => navLink(item, true)).join("")}</nav></div>`;
+  return `<a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="app-shell"><aside class="sidebar"><a class="brand" href="#dashboard" data-view="dashboard">${brandIdentity()}</a><nav class="side-nav" aria-label="Navegação principal"><span class="side-nav__section">Seu evento</span>${primaryNav.map((item) => navLink(item)).join("")}<span class="side-nav__section">Análise e estratégia</span>${analysisNav.map((item) => navLink(item)).join("")}<span class="side-nav__section">Organização</span>${managementNav.map((item) => navLink(item)).join("")}</nav><div class="side-help"><div><h3>${icon("clipboard",15)} Pronto para a arena?</h3><p>Um evento organizado começa com uma boa observação.</p><button data-action="start-scout">Iniciar observação ${icon("chevron",13)}</button></div></div><div class="side-footer"><button class="side-footer__scout" data-view="settings" aria-label="Alterar scout atual">${avatar(scout)}<div><strong>${escapeHtml(scout?.name || "Seu perfil de scout")}</strong><span><i class="online-dot"></i>${syncStatus === "offline" ? "Trabalhando offline" : "Dados neste dispositivo"}</span></div>${icon("more",17)}</button></div></aside><main class="main" id="main-content" tabindex="-1">${mobileHeader()}${searchHeader()}${content}</main><nav class="mobile-nav" aria-label="Atalhos">${mobileNav.map((item) => navLink(item, true)).join("")}</nav></div>`;
 }
 
 function seasonActionDeleteConfirm(actionId) {
@@ -601,7 +601,7 @@ async function handleAction(button) {
 }
 
 function exportData(format, scope) {
-  const options = scope === "backup" ? { format: "json", scope: "backup", filename: "ftc-scout-arena-backup" } : { format, scope, eventId: activeEvent(state)?.id };
+  const options = scope === "backup" ? { format: "json", scope: "backup", filename: "acrux-scout-backup" } : { format, scope, eventId: activeEvent(state)?.id };
   const result = downloadExport(state, options);
   toast(result.downloaded ? `${result.filename} baixado.` : "Arquivo de exportação preparado.", "success");
 }
@@ -885,5 +885,5 @@ async function initialize() {
 
 initialize().catch((error) => {
   console.error(error);
-  root.innerHTML = `<main class="main"><section class="page"><div class="empty-state"><span class="empty-state__icon">${icon("alert",28)}</span><h3>Não foi possível abrir o Scout Arena</h3><p>Recarregue a página para tentar restaurar o banco local.</p></div></section></main>`;
+  root.innerHTML = `<main class="main"><section class="page"><div class="empty-state"><span class="empty-state__icon">${icon("alert",28)}</span><h3>Não foi possível abrir o Acrux Scout</h3><p>Recarregue a página para tentar restaurar o banco local.</p></div></section></main>`;
 });

@@ -6,6 +6,7 @@ export const icon = (name, size = 20) => {
     ranking: '<path d="M5 21V10M12 21V3M19 21v-6"/><path d="M3 21h18"/>',
     compare: '<path d="M4 6h7v12H4zM13 3h7v15h-7z"/><path d="M6 10h3M15 8h3M6 14h3M15 12h3"/>',
     star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/>',
+    sparkle: '<path d="M12 2c1.4 5.6 4.4 8.6 10 10-5.6 1.4-8.6 4.4-10 10C10.6 16.4 7.6 13.4 2 12c5.6-1.4 8.6-4.4 10-10Z" fill="currentColor" stroke="none"/>',
     chart: '<path d="M4 19V5M4 19h17"/><path d="m7 15 4-4 3 2 5-6"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.04 1.56V20.3h-3v-.08A1.7 1.7 0 0 0 10.66 18.66a1.7 1.7 0 0 0-1.88.34l-.06.06L6.6 16.94l.06-.06A1.7 1.7 0 0 0 7 15a1.7 1.7 0 0 0-1.56-1.04H5.3v-3h.14A1.7 1.7 0 0 0 7 9.92a1.7 1.7 0 0 0-.34-1.88L6.6 7.98 8.72 5.86l.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.04-1.56V4.62h3v.08a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.04h.08v3h-.08A1.7 1.7 0 0 0 19.4 15Z"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
@@ -39,6 +40,8 @@ export const escapeHtml = (value = "") => String(value)
   .replaceAll(">", "&gt;")
   .replaceAll('"', "&quot;")
   .replaceAll("'", "&#039;");
+
+export const brandIdentity = () => `<span class="brand-mark"><img src="./assets/acrux-logo.jpg" width="48" height="48" alt="" /></span><span class="brand-text"><strong>ACRUX</strong><span>SCOUTING · #23311</span></span>`;
 
 export const number = (value, digits = 0) => new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: digits,
