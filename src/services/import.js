@@ -24,8 +24,8 @@ export function parseTeamLines(text, existingTeams = []) {
 export function parseBackup(text) {
   let value;
   try { value = JSON.parse(text); } catch { throw new Error("Este arquivo não contém um JSON válido."); }
-  if (!value || typeof value !== "object" || Array.isArray(value) || !Number.isInteger(value.schemaVersion) || !value.settings || typeof value.settings !== "object" || Array.isArray(value.settings)) throw new Error("Selecione um backup completo do Scout Arena.");
-  if (value.schemaVersion > APP_SCHEMA_VERSION) throw new Error("Este backup foi criado em uma versão mais recente do Scout Arena.");
+  if (!value || typeof value !== "object" || Array.isArray(value) || !Number.isInteger(value.schemaVersion) || !value.settings || typeof value.settings !== "object" || Array.isArray(value.settings)) throw new Error("Selecione um backup completo do Acrux Scout.");
+  if (value.schemaVersion > APP_SCHEMA_VERSION) throw new Error("Este backup foi criado em uma versão mais recente do Acrux Scout.");
   const keys = ["seasonConfigs", "events", "scouts", "teams", "matches", "scoutingRecords"];
   for (const key of keys) {
     if (!Array.isArray(value[key])) throw new Error("Selecione o arquivo de backup, e não uma exportação de scouting.");

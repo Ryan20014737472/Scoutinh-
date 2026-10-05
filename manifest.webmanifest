@@ -1,16 +1,22 @@
 {
-  "name": "FTC Scout Arena",
-  "short_name": "Scout Arena",
-  "description": "Observe partidas, acompanhe equipes e decida sua estratégia FTC.",
+  "name": "Acrux Scout · FTC #23311",
+  "short_name": "Acrux Scout",
+  "description": "Scouting FTC com a identidade da Acrux #23311. Observe partidas e construa sua estratégia.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f6f8f6",
-  "theme_color": "#172c24",
+  "background_color": "#f4f7fc",
+  "theme_color": "#05194c",
   "icons": [
     {
       "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/acrux-logo.jpg",
+      "sizes": "1280x1280",
+      "type": "image/jpeg",
       "purpose": "any"
     }
   ]

@@ -1,6 +1,8 @@
-# Scout Arena
+# Acrux Scout
 
 Scouting de FIRST Tech Challenge em português, com uma interface para computador e celular. Cadastre seu evento, observe as equipes e acompanhe os resultados sem depender da conexão durante as partidas.
+
+A identidade visual usa a marca da Acrux #23311: azul profundo, ciano, branco e a estrela amarela. A logo original está em `assets/acrux-logo.jpg` e é incluída no build e no cache offline. As telas de trabalho mantêm fundos claros e controles com contraste.
 
 ## Como usar
 

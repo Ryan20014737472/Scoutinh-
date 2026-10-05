@@ -12,7 +12,7 @@ await mkdir(server, { recursive: true });
 // Sites serves public assets from dist/client, following the vinext output
 // convention. This app intentionally uses no bundler dependencies: browser
 // ES modules are copied unchanged and are cached by the service worker.
-for (const item of ["index.html", "icon.svg", "manifest.webmanifest", "sw.js", "src"]) {
+for (const item of ["index.html", "icon.svg", "assets", "manifest.webmanifest", "sw.js", "src"]) {
   await cp(join(root, item), join(client, item), { recursive: true });
 }
 

@@ -1,7 +1,7 @@
 const CACHE_PREFIX = "ftc-scout-arena-";
-const CACHE_NAME = `${CACHE_PREFIX}v10-${new URL(self.registration.scope).pathname}`;
+const CACHE_NAME = `${CACHE_PREFIX}v11-${new URL(self.registration.scope).pathname}`;
 const APP_SHELL = [
-  "./", "index.html", "icon.svg", "manifest.webmanifest", "src/styles.css",
+  "./", "index.html", "icon.svg", "assets/acrux-logo.jpg", "manifest.webmanifest", "src/styles.css",
   "src/app.js", "src/components/ui.js", "src/components/forms.js",
   "src/data/seed.js", "src/services/storage.js", "src/services/scoring.js",
   "src/services/analytics.js", "src/services/export.js", "src/services/import.js",
