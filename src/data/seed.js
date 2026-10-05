@@ -36,7 +36,7 @@ const BIOBUZZ_PRESEASON_CONFIG = {
   scoringScope: "observations_only",
   officialSource: FIRST_OFFICIAL_FTC_SOURCES.biobuzzMaterials,
   officialManual: FIRST_OFFICIAL_FTC_SOURCES.biobuzzManual,
-  officialNote: "A FIRST ainda não publicou critérios ou valores de pontuação do BIOBUZZ. O Kickoff e a revelação do jogo estão previstos para 12 de setembro de 2026. Estas métricas são internas e não calculam pontuação oficial.",
+  officialNote: "Este preset registra ações, ciclos e a condição do robô sem calcular placar. Confira o manual vigente da FIRST antes de configurar a pontuação do evento.",
   createdAt: SEED_CREATED_AT,
   updatedAt: SEED_CREATED_AT,
   actions: {

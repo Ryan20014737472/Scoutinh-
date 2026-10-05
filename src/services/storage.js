@@ -7,6 +7,7 @@
  */
 import * as seedData from "../data/seed.js";
 import { calculateRecord, normalizeScoutingRecord } from "./scoring.js";
+import { getMatchTeams, recordFor } from "../utils/domain.js";
 
 export const DATABASE_NAME = "ftc-scouting-v3";
 export const DATABASE_VERSION = 1;
@@ -299,7 +300,9 @@ export async function getState() {
 export const loadState = getState;
 
 function enqueue(operation) {
-  const result = operationQueue.then(operation);
+  const result = operationQueue.then(() => globalThis.navigator?.locks?.request
+    ? globalThis.navigator.locks.request(`${DATABASE_NAME}:write`, operation)
+    : operation());
   // Keep later writes alive even if a caller handles an earlier failure badly.
   operationQueue = result.catch(() => undefined);
   return result;
@@ -421,6 +424,7 @@ export function createDraft(context = {}, seasonConfig) {
 }
 
 function clampActionValue(value, action) {
+  if (isObject(value)) value = value.value ?? value.quantity ?? value.count;
   const type = String(action?.inputType || action?.type || "counter").toLowerCase();
   if (type === "boolean" || type === "yesno") {
     if (typeof value === "string") {
@@ -465,7 +469,7 @@ export function normalizeDraft(draft, seasonConfig) {
     actions,
     actionStatus,
     robot: { ...base.robot, ...(isObject(incoming.robot) ? incoming.robot : {}) },
-    notes: typeof incoming.notes === "string" ? incoming.notes.trim().slice(0, 2000) : "",
+    notes: typeof incoming.notes === "string" ? incoming.notes.slice(0, 2000) : "",
     updatedAt: new Date().toISOString(),
   };
 }
@@ -518,9 +522,20 @@ export async function submitRecord(record, seasonConfig, { replace = false } = {
       status: "submitted",
       savedAt: new Date().toISOString(),
     };
+    delete savedRecord.editingRecordId;
     state.scoutingRecords = [...records];
     if (targetIndex >= 0) state.scoutingRecords[targetIndex] = savedRecord;
     else state.scoutingRecords.push(savedRecord);
+    if (state.drafts) delete state.drafts[draft.id];
+    const match = (state.matches || []).find((item) => String(item.id) === String(draft.matchId));
+    if (match) {
+      const assignmentKey = `${draft.alliance}-${draft.position}`;
+      if (String(match.scoutAssignments?.[assignmentKey]) === String(draft.scoutId)) delete match.scoutAssignments[assignmentKey];
+      const entries = getMatchTeams(state, match);
+      const completed = entries.filter((entry) => recordFor(state, match.id, entry.teamId)).length;
+      const inProgress = Object.values(state.drafts || {}).some((item) => String(item.matchId) === String(match.id));
+      match.status = entries.length && completed === entries.length ? "complete" : completed || inProgress ? "in_progress" : "not_started";
+    }
     return state;
   });
 

@@ -6,12 +6,12 @@ async function collect(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
   const nested = await Promise.all(entries.map(async (entry) => {
     const full = join(dir, entry.name);
-    return entry.isDirectory() ? collect(full) : entry.name.endsWith(".js") ? [full] : [];
+    return entry.isDirectory() ? collect(full) : /\.m?js$/.test(entry.name) ? [full] : [];
   }));
   return nested.flat();
 }
 
-const files = await collect(join(process.cwd(), "src"));
+const files = [...await collect(join(process.cwd(), "src")), ...await collect(join(process.cwd(), "scripts")), join(process.cwd(), "sw.js")];
 for (const file of files) {
   const result = spawnSync(process.execPath, ["--check", file], { encoding: "utf8" });
   if (result.status !== 0) {

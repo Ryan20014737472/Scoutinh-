@@ -1,11 +1,11 @@
 import { getRanking } from "../services/analytics.js";
 import { escapeHtml, icon, number, sectionHeader } from "../components/ui.js";
-import { activeSeason, getMatchTeams, matchLabel } from "../utils/domain.js";
+import { activeEvent, activeSeason, getMatchTeams, matchLabel, watchMeta } from "../utils/domain.js";
 import { WATCHLIST_CATEGORY_LABELS } from "../types/domain.js";
 
 function upcoming(state, teamId) {
   return (state.matches || [])
-    .filter((match) => !["complete", "completed"].includes(match.status))
+    .filter((match) => String(match.eventId) === String(activeEvent(state)?.id) && !["complete", "completed"].includes(match.status))
     .filter((match) => getMatchTeams(state, match).some((entry) => String(entry.teamId) === String(teamId)))
     .slice(0, 2);
 }
@@ -17,7 +17,7 @@ function favoriteCard(profile, observationsOnly) {
 }
 
 function watchCard(state, profile) {
-  const watch = (state.watchlist || []).find((item) => String(item.teamId) === String(profile.teamId || profile.id)) || {};
+  const watch = watchMeta(state, profile.teamId || profile.id) || {};
   const next = upcoming(state, profile.teamId || profile.id);
   const tag = watch.category === "defense" ? "defense" : watch.category === "alliance_pick" ? "partner" : watch.priority === "high" ? "priority" : "watch";
   return `<article class="favorite-card"><div class="favorite-card__head"><div><span class="tag ${tag}">${escapeHtml(WATCHLIST_CATEGORY_LABELS[watch.category] || "Observar novamente")}</span><h3 style="margin:8px 0 1px;font-size:15px">${escapeHtml(profile.teamNumber || "—")} · ${escapeHtml(profile.name || "Equipe")}</h3><p class="subtle" style="margin:0">${escapeHtml(watch.reason || "Nova observação recomendada.")}</p></div><button class="icon-button" data-action="toggle-watchlist" data-team-id="${escapeHtml(profile.teamId || profile.id)}" aria-label="Remover da watchlist">${icon("close", 16)}</button></div><div class="field-grid two"><div class="field"><label>Categoria</label><select data-action="set-watch-category" data-team-id="${escapeHtml(profile.teamId || profile.id)}">${Object.entries(WATCHLIST_CATEGORY_LABELS).map(([value, label]) => `<option value="${value}" ${watch.category === value ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}</select></div><div class="field"><label>Prioridade</label><select data-action="set-watch-priority" data-team-id="${escapeHtml(profile.teamId || profile.id)}"><option value="medium" ${watch.priority === "medium" ? "selected" : ""}>Média</option><option value="high" ${watch.priority === "high" ? "selected" : ""}>Alta</option></select></div></div><div class="card inset pad" style="padding:9px;margin-top:8px"><span class="icon-text">${icon("matches", 15)} ${next.length ? `Próxima: ${escapeHtml(matchLabel(next[0]))}${next[1] ? ` · depois ${escapeHtml(matchLabel(next[1]))}` : ""}` : "Sem próxima partida cadastrada"}</span></div><div class="form-actions"><button class="button small" data-action="open-team" data-team-id="${escapeHtml(profile.teamId || profile.id)}">Abrir perfil ${icon("chevron", 14)}</button></div></article>`;
@@ -29,9 +29,9 @@ export function renderFavorites({ state }) {
   const watches = ranking.filter((profile) => profile.watchlist);
   const observationsOnly = activeSeason(state)?.scoringScope === "observations_only";
   return `<section class="page fullwide">
-    ${sectionHeader({ eyebrow: "Estratégia", title: "Favoritos e Watchlist", description: "Destaque parceiros promissores e mantenha as próximas observações visíveis." })}
-    <div class="grid" style="grid-template-columns:minmax(0,1fr);gap:16px"><section class="card pad"><div class="card-header"><div><h2>${icon("star", 18)} Equipes favoritas</h2><span class="subtle">Marcadas com estrela pelo time de estratégia.</span></div><span class="status-pill warn">${favorites.length} favoritas</span></div><div class="favorite-grid">${favorites.map((profile) => favoriteCard(profile, observationsOnly)).join("") || '<div class="empty-state"><span class="empty-state__icon">${icon("star", 28)}</span><h3>Sem favoritas</h3><p>Abra uma equipe e toque em Favoritar para destacá-la aqui.</p></div>'}</div></section>
-      <section class="card pad"><div class="card-header"><div><h2>${icon("alert", 18)} Watchlist</h2><span class="subtle">Equipes que precisam de uma nova observação.</span></div><span class="status-pill info">${watches.length} em foco</span></div><div class="favorite-grid">${watches.map((profile) => watchCard(state, profile)).join("") || '<div class="empty-state"><span class="empty-state__icon">${icon("alert", 28)}</span><h3>Watchlist vazia</h3><p>Marque uma equipe para acompanhar onde ela jogará novamente.</p></div>'}</div></section>
+    ${sectionHeader({ eyebrow: "Estratégia", title: "Favoritos e observações", description: "Destaque parceiros promissores e mantenha as próximas observações visíveis." })}
+    <div class="grid" style="grid-template-columns:minmax(0,1fr);gap:16px"><section class="card pad"><div class="card-header"><div><h2>${icon("star", 18)} Equipes favoritas</h2><span class="subtle">Marcadas com estrela pelo time de estratégia.</span></div><span class="status-pill warn">${favorites.length} favoritas</span></div><div class="favorite-grid">${favorites.map((profile) => favoriteCard(profile, observationsOnly)).join("") || `<div class="empty-state"><span class="empty-state__icon">${icon("star", 28)}</span><h3>Suas favoritas ficam aqui</h3><p>Abra o perfil de uma equipe e toque em Favoritar.</p><button class="button" data-view="teams">Explorar equipes</button></div>`}</div></section>
+      <section class="card pad"><div class="card-header"><div><h2>${icon("alert", 18)} Watchlist</h2><span class="subtle">Equipes que precisam de uma nova observação.</span></div><span class="status-pill info">${watches.length} em foco</span></div><div class="favorite-grid">${watches.map((profile) => watchCard(state, profile)).join("") || `<div class="empty-state"><span class="empty-state__icon">${icon("alert", 28)}</span><h3>Nenhuma equipe marcada</h3><p>Marque uma equipe para observar novamente na próxima partida.</p><button class="button" data-view="teams">Ver equipes</button></div>`}</div></section>
     </div>
   </section>`;
 }
