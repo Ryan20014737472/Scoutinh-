@@ -223,10 +223,11 @@ export function exportData(state, options = {}) {
   const baseName = exportFileBaseName(state, { ...options, scope });
 
   if (format === "json") {
+    const content = scope === "backup" ? state : scope === "teams" ? asArray(state?.teams) : asArray(state?.scoutingRecords).filter((record) => !options.eventId || String(record.eventId) === String(options.eventId));
     return {
       filename: `${baseName}.json`,
       mimeType: JSON_MIME_TYPE,
-      content: exportStateJson(state, options),
+      content: exportStateJson(content, options),
       format: "json",
       scope,
     };

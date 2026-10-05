@@ -65,8 +65,8 @@ export const statusPill = (status) => {
   const map = {
     online: ["Online", "good", "check"],
     offline: ["Offline", "warn", "offline"],
-    syncing: ["Sincronizando", "info", "sync"],
-    synced: ["Sincronizado", "good", "check"],
+    syncing: ["Salvando", "info", "sync"],
+    synced: ["Salvo no dispositivo", "good", "check"],
     "Não iniciada": ["Não iniciada", "muted", "clock"],
     "Em andamento": ["Em andamento", "info", "clock"],
     Completa: ["Completa", "good", "check"],
@@ -103,6 +103,7 @@ export const toast = (message, type = "info") => {
   const host = document.querySelector(".toast-host") || document.body.appendChild(Object.assign(document.createElement("div"), { className: "toast-host" }));
   const element = document.createElement("div");
   element.className = `toast ${type}`;
+  element.setAttribute("role", type === "error" ? "alert" : "status");
   element.innerHTML = `${icon(type === "error" ? "alert" : type === "success" ? "check" : "sync", 18)}<span>${escapeHtml(message)}</span>`;
   host.appendChild(element);
   requestAnimationFrame(() => element.classList.add("show"));

@@ -68,15 +68,15 @@ export function matchTime(match) {
 }
 
 export function isFavorite(state, teamId) {
-  return (state?.favorites || []).some((item) => String(item.teamId ?? item) === String(teamId));
+  return Boolean(favoriteMeta(state, teamId));
 }
 
 export function favoriteMeta(state, teamId) {
-  return (state?.favorites || []).find((item) => String(item.teamId ?? item) === String(teamId)) || null;
+  return (state?.favorites || []).find((item) => String(item.teamId ?? item) === String(teamId) && (!item.eventId || String(item.eventId) === String(activeEvent(state)?.id))) || null;
 }
 
 export function watchMeta(state, teamId) {
-  return (state?.watchlist || []).find((item) => String(item.teamId ?? item) === String(teamId)) || null;
+  return (state?.watchlist || []).find((item) => String(item.teamId ?? item) === String(teamId) && (!item.eventId || String(item.eventId) === String(activeEvent(state)?.id))) || null;
 }
 
 export function normalizeAlliance(alliance) {

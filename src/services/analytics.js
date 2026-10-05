@@ -539,12 +539,12 @@ function profileRecord(record, seasonConfig) {
 function favoriteForTeam(team, options) {
   if (team?.favorite || team?.isFavorite) return true;
   const favorites = asArray(options?.favorites);
-  return favorites.some((favorite) => idsEqual(objectId(firstDefined(favorite?.teamId, favorite?.team, favorite)), team?.id));
+  return favorites.some((favorite) => idsEqual(objectId(firstDefined(favorite?.teamId, favorite?.team, favorite)), team?.id) && (!favorite?.eventId || !options?.eventId || idsEqual(favorite.eventId, options.eventId)));
 }
 
 function watchlistForTeam(team, options) {
   const items = asArray(options?.watchlist)
-    .filter((item) => idsEqual(objectId(firstDefined(item?.teamId, item?.team, item)), team?.id));
+    .filter((item) => idsEqual(objectId(firstDefined(item?.teamId, item?.team, item)), team?.id) && (!item?.eventId || !options?.eventId || idsEqual(item.eventId, options.eventId)));
   const inline = asArray(firstDefined(team?.watchlist, team?.watchlistCategories, team?.tags, []));
   const categories = [...new Set([
     ...items.map((item) => firstDefined(item?.category, item?.type, item?.label)).filter(Boolean),
@@ -578,11 +578,14 @@ export function calculateTeamProfile(teamOrId, records = [], seasonConfig = {}, 
   const cycles = entries.map((entry) => entry.cycles);
   const averageScore = mean(totals);
   const deviation = standardDeviation(totals, averageScore);
-  const consistency = totals.length === 0
+  const consistencyValues = seasonConfig?.scoringScope === "observations_only" ? cycles : totals;
+  const consistencyMean = mean(consistencyValues);
+  const consistencyDeviation = standardDeviation(consistencyValues, consistencyMean);
+  const consistency = consistencyValues.length === 0
     ? 0
-    : averageScore === 0
-      ? (totals.every((value) => value === 0) ? 100 : 0)
-      : clamp(100 - ((deviation / Math.abs(averageScore)) * 100));
+    : consistencyMean === 0
+      ? (consistencyValues.every((value) => value === 0) ? 100 : 0)
+      : clamp(100 - ((consistencyDeviation / Math.abs(consistencyMean)) * 100));
   const failures = entries.reduce((total, entry) => ({
     mechanical: total.mechanical + entry.failures.mechanical,
     electrical: total.electrical + entry.failures.electrical,

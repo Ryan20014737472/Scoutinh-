@@ -4,7 +4,7 @@ import { RATING_WEIGHT_LABELS } from "../types/domain.js";
 import { activeSeason } from "../utils/domain.js";
 
 export function renderRanking({ state }) {
-  const ranking = getRanking(state);
+  const ranking = getRanking(state).filter((profile) => profile.matchesAnalyzed > 0);
   const weights = state.settings?.ratingWeights || {};
   const podium = ranking.slice(0,3);
   const observationsOnly = activeSeason(state)?.scoringScope === "observations_only";
